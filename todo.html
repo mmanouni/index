@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDo App with Dropbox</title>
+    <script src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+    <style>
+        /* Add your styles here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        input {
+            padding: 10px;
+            width: 70%;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 8px;
+            border: 1px solid #ddd;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ToDo List</h1>
+    <input type="text" id="taskInput" placeholder="Add a new task...">
+    <button onclick="addTask()">Add Task</button>
+    <ul id="taskList"></ul>
+
+    <script>
+        const ACCESS_TOKEN = 'sl.B-yux90NGbkqAyY2OML1ZgwOp-OP6upKOwfzFkxF8MddxJVSQHzcu5VjcW-eorIrTJ7Y6Is6gN3DDUXPFXpRKCE4P07RoF-RVGQ0oJRnqDc1alHN9owguVefS9DOAQ5dmUenO6R9O8C94eYiE-k0f9k';
+        const dbx = new Dropbox.Dropbox({ accessToken: ACCESS_TOKEN });
+
+        // Fetch tasks from Dropbox
+        function fetchTasks() {
+            dbx.filesDownload({ path: '/tasks.txt' })
+                .then(response => response.fileBlob.text())
+                .then(text => {
+                    const tasks = text.split('\n').filter(task => task);
+                    renderTasks(tasks);
+                })
+                .catch(error => console.error(error));
+        }
+
+        // Add a new task
+        function addTask() {
+            const task = document.getElementById('taskInput').value;
+            if (task) {
+                dbx.filesDownload({ path: '/tasks.txt' })
+                    .then(response => response.fileBlob.text())
+                    .then(text => {
+                        const updatedTasks = text + task + '\n';
+                        return dbx.filesUpload({ path: '/tasks.txt', contents: updatedTasks });
+                    })
+                    .then(() => {
+                        renderTasks(updatedTasks.split('\n'));
+                        document.getElementById('taskInput').value = ''; // Clear input
+                    })
+                    .catch(error => console.error(error));
+            }
+        }
+
+        // Render tasks on the page
+        function renderTasks(tasks) {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = ''; // Clear current list
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.textContent = task;
+                taskList.appendChild(li);
+            });
+        }
+
+        // Load tasks when the page is loaded
+        window.onload = fetchTasks;
+    </script>
+</body>
+</html>
